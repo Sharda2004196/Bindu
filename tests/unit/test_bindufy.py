@@ -218,6 +218,7 @@ class TestBindufy:
             "recreate_keys": False,
             "auth": {
                 "enabled": True,
+                "provider": "auth0",
                 "domain": "test.auth0.com",
                 "audience": "test-api",
                 "algorithms": ["RS256"],

@@ -87,9 +87,10 @@ async def test_agent_registration_flow():
     with tempfile.TemporaryDirectory() as tmpdir:
         credentials_dir = Path(tmpdir)
 
-        # Mock Hydra client
+        # Mock Hydra client - DID is used as client_id
+        test_did = "did:key:test123"
         mock_client = {
-            "client_id": "agent-test-123",
+            "client_id": test_did,
             "client_name": "Test Agent",
             "grant_types": ["client_credentials"],
         }
@@ -107,16 +108,16 @@ async def test_agent_registration_flow():
                 agent_id="test-123",
                 agent_name="Test Agent",
                 agent_url="http://localhost:3773",
-                did="did:key:test123",
+                did=test_did,
                 credentials_dir=credentials_dir,
             )
 
             assert credentials is not None
             assert credentials.agent_id == "test-123"
-            assert credentials.client_id == "agent-test-123"
+            assert credentials.client_id == test_did
 
-            # Verify credentials were saved
-            loaded = load_agent_credentials("test-123", credentials_dir)
+            # Verify credentials were saved (lookup by DID, not agent_id)
+            loaded = load_agent_credentials(test_did, credentials_dir)
             assert loaded is not None
             assert loaded.client_id == credentials.client_id
 

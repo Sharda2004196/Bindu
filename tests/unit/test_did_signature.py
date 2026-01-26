@@ -90,7 +90,7 @@ class TestSignRequest:
 class TestVerifySignature:
     """Test signature verification."""
 
-    @patch("bindu.utils.did_signature.DIDExtension")
+    @patch("bindu.utils.did_signature.DIDAgentExtension")
     def test_verify_signature_valid(self, mock_did_ext_class):
         """Test verifying a valid signature."""
         mock_did_ext_class.verify_signature_with_public_key.return_value = True
@@ -105,7 +105,7 @@ class TestVerifySignature:
 
         assert result is True
 
-    @patch("bindu.utils.did_signature.DIDExtension")
+    @patch("bindu.utils.did_signature.DIDAgentExtension")
     def test_verify_signature_expired_timestamp(self, mock_did_ext_class):
         """Test that expired timestamps are rejected."""
         body = {"test": "data"}
@@ -120,7 +120,7 @@ class TestVerifySignature:
 
         assert result is False
 
-    @patch("bindu.utils.did_signature.DIDExtension")
+    @patch("bindu.utils.did_signature.DIDAgentExtension")
     def test_verify_signature_invalid(self, mock_did_ext_class):
         """Test verifying an invalid signature."""
         mock_did_ext_class.verify_signature_with_public_key.return_value = False
