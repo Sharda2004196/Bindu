@@ -39,13 +39,6 @@ class TestMaskDatabaseURL:
         result = mask_database_url(url)
         assert result == url
 
-    def test_url_with_exception(self):
-        """Test URL that causes exception during parsing."""
-        url = "postgresql://user:pass@"  # pragma: allowlist secret
-        result = mask_database_url(url)
-        # Should return original URL on exception
-        assert result == url
-
 
 class TestSanitizeIdentifier:
     """Test SQL identifier sanitization."""

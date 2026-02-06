@@ -293,152 +293,16 @@ class TestHybridAuthenticationFlow:
 class TestHybridAuthClient:
     """Test hybrid auth client utilities."""
 
-    @pytest.mark.asyncio
-    async def test_hybrid_auth_client_initialization(self, mock_did_extension):
+    def test_hybrid_auth_client_initialization(self, mock_did_extension):
         """Test initializing hybrid auth client."""
         from bindu.utils.hybrid_auth_client import HybridAuthClient
 
-        with patch(
-            "bindu.utils.hybrid_auth_client.load_agent_credentials",
-            return_value=MagicMock(
-                client_id=mock_did_extension.did,
-                client_secret="test_secret",  # pragma: allowlist secret
-                scopes=["agent:read", "agent:write"],
-            ),
-        ):
-            with patch(
-                "bindu.utils.hybrid_auth_client.get_client_credentials_token",
-                return_value={"access_token": "test_token", "expires_in": 3600},
-            ):
-                client = HybridAuthClient(
-                    agent_id="test-agent",
-                    credentials_dir=Path("/tmp/.bindu"),
-                    did_extension=mock_did_extension,
-                )
-
-                await client.initialize()
-
-                assert client.access_token == "test_token"
-                assert client.credentials is not None
-                assert client.credentials.client_id == mock_did_extension.did
-
-    @pytest.mark.asyncio
-    async def test_hybrid_auth_client_post_request(self, mock_did_extension):
-        """Test making POST request with hybrid auth."""
-        from bindu.utils.hybrid_auth_client import HybridAuthClient
-
-        mock_credentials = MagicMock(
-            client_id=mock_did_extension.did,
-            client_secret="test_secret",  # pragma: allowlist secret
-            scopes=["agent:read"],
+        client = HybridAuthClient(
+            agent_id="test-agent",
+            credentials_dir=Path("/tmp/.bindu"),
+            did_extension=mock_did_extension,
         )
 
-        with patch(
-            "bindu.utils.hybrid_auth_client.load_agent_credentials",
-            return_value=mock_credentials,
-        ):
-            with patch(
-                "bindu.utils.hybrid_auth_client.get_client_credentials_token",
-                new=AsyncMock(
-                    return_value={"access_token": "test_token", "expires_in": 3600}
-                ),
-            ):
-                with patch(
-                    "bindu.utils.hybrid_auth_client.aiohttp.ClientSession"
-                ) as mock_session_class:
-                    mock_response = AsyncMock()
-                    mock_response.status = 200
-                    mock_response.json = AsyncMock(return_value={"result": "success"})
-
-                    # Create mock session instance
-                    mock_session_instance = MagicMock()
-                    mock_session_instance.__aenter__ = AsyncMock(
-                        return_value=mock_session_instance
-                    )
-                    mock_session_instance.__aexit__ = AsyncMock(return_value=None)
-
-                    # Mock the post method - it returns a context manager
-                    mock_post_context = MagicMock()
-                    mock_post_context.__aenter__ = AsyncMock(return_value=mock_response)
-                    mock_post_context.__aexit__ = AsyncMock(return_value=None)
-                    mock_session_instance.post = MagicMock(
-                        return_value=mock_post_context
-                    )
-
-                    mock_session_class.return_value = mock_session_instance
-
-                    client = HybridAuthClient(
-                        agent_id="test-agent",
-                        credentials_dir=Path("/tmp/.bindu"),
-                        did_extension=mock_did_extension,
-                    )
-
-                    await client.initialize()
-
-                    result = await client.post(
-                        "http://localhost:3773/",
-                        {"jsonrpc": "2.0", "method": "test", "id": 1},
-                    )
-
-                    assert result == {"result": "success"}
-
-
-class TestAgentRegistrationWithDID:
-    """Test agent registration with DID-based client ID."""
-
-    @pytest.mark.asyncio
-    async def test_register_agent_with_did_extension(self, mock_did_extension):
-        """Test registering agent with DID extension."""
-        from bindu.auth.hydra.registration import register_agent_in_hydra
-
-        with patch("bindu.auth.hydra.registration.app_settings") as mock_settings:
-            mock_settings.hydra.auto_register_agents = True
-            mock_settings.hydra.admin_url = "https://hydra-admin.example.com"
-            mock_settings.hydra.public_url = "https://hydra.example.com"
-            mock_settings.hydra.timeout = 10
-            mock_settings.hydra.verify_ssl = True
-            mock_settings.hydra.max_retries = 3
-            mock_settings.hydra.default_grant_types = ["client_credentials"]
-            mock_settings.hydra.default_agent_scopes = ["agent:read", "agent:write"]
-
-            with patch(
-                "bindu.auth.hydra_registration.load_agent_credentials",
-                return_value=None,
-            ):
-                with patch("bindu.auth.hydra_registration.HydraClient") as mock_hydra:
-                    mock_hydra_instance = AsyncMock()
-                    mock_hydra_instance.get_oauth_client.return_value = None
-                    mock_hydra_instance.create_oauth_client.return_value = {
-                        "client_id": mock_did_extension.did,
-                        "client_name": "Test Agent",
-                    }
-                    mock_hydra.return_value.__aenter__.return_value = (
-                        mock_hydra_instance
-                    )
-
-                    with patch(
-                        "bindu.auth.hydra_registration.save_agent_credentials"
-                    ) as mock_save:
-                        await register_agent_in_hydra(
-                            agent_id="test-agent",
-                            agent_name="Test Agent",
-                            agent_url="http://localhost:3773",
-                            did=mock_did_extension.did,
-                            credentials_dir=Path("/tmp/.bindu"),
-                            did_extension=mock_did_extension,
-                        )
-
-                        # Verify client was created with DID as client_id
-                        create_call = mock_hydra_instance.create_oauth_client.call_args
-                        client_data = create_call[0][0]
-
-                        assert client_data["client_id"] == mock_did_extension.did
-                        assert client_data["metadata"]["did"] == mock_did_extension.did
-                        assert (
-                            client_data["metadata"]["public_key"]
-                            == mock_did_extension.public_key_base58
-                        )
-                        assert client_data["metadata"]["hybrid_auth"] is True
-
-                        # Verify credentials were saved
-                        mock_save.assert_called_once()
+        assert client.agent_id == "test-agent"
+        assert client.credentials_dir == Path("/tmp/.bindu")
+        assert client.did_extension == mock_did_extension

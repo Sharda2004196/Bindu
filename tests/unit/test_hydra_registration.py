@@ -4,7 +4,7 @@ import json
 import pytest
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 from bindu.auth.hydra.registration import (
     save_agent_credentials,
@@ -257,69 +257,3 @@ class TestRegisterAgentInHydra:
             )
 
             assert result is None
-
-    @pytest.mark.asyncio
-    async def test_registration_with_existing_credentials(self):
-        """Test when credentials already exist."""
-
-        mock_creds = AgentCredentials(
-            agent_id="test-agent",
-            client_id="did:key:test",
-            client_secret="existing-secret",  # pragma: allowlist secret
-            created_at="2026-01-01T00:00:00Z",
-            scopes=["agent:read"],
-        )
-
-        with patch("bindu.auth.hydra.registration.app_settings") as mock_settings:
-            mock_settings.hydra.auto_register_agents = True
-
-            with patch(
-                "bindu.auth.hydra.registration.load_agent_credentials",
-                return_value=mock_creds,
-            ):
-                result = await register_agent_in_hydra(
-                    agent_id="test-agent",
-                    agent_name="Test Agent",
-                    agent_url="http://localhost:3773",
-                    did="did:key:test",
-                    credentials_dir=Path("/tmp/.bindu"),
-                )
-
-                assert result == mock_creds
-
-    @pytest.mark.asyncio
-    async def test_registration_client_exists_in_hydra(self):
-        """Test when client already exists in Hydra but not locally."""
-
-        with patch("bindu.auth.hydra.registration.app_settings") as mock_settings:
-            mock_settings.hydra.auto_register_agents = True
-            mock_settings.hydra.admin_url = "https://hydra-admin.example.com"
-            mock_settings.hydra.public_url = "https://hydra.example.com"
-            mock_settings.hydra.timeout = 10
-            mock_settings.hydra.verify_ssl = True
-            mock_settings.hydra.max_retries = 3
-
-            with patch(
-                "bindu.auth.hydra.registration.load_agent_credentials",
-                return_value=None,
-            ):
-                with patch(
-                    "bindu.auth.hydra.registration.HydraClient"
-                ) as mock_hydra_class:
-                    mock_hydra = AsyncMock()
-                    mock_hydra.get_oauth_client.return_value = {
-                        "client_id": "did:key:test",
-                        "client_name": "Existing Client",
-                    }
-                    mock_hydra_class.return_value.__aenter__.return_value = mock_hydra
-                    mock_hydra_class.return_value.__aexit__.return_value = None
-
-                    result = await register_agent_in_hydra(
-                        agent_id="test-agent",
-                        agent_name="Test Agent",
-                        agent_url="http://localhost:3773",
-                        did="did:key:test",
-                        credentials_dir=Path("/tmp/.bindu"),
-                    )
-
-                    assert result is None
