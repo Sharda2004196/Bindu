@@ -57,6 +57,7 @@ dependencies = [
     "pyperclip==1.11.0",
     # Security
     "detect-secrets==1.5.0",
+    "dotenv>=0.9.9",
 ]
 
 [project.optional-dependencies]
