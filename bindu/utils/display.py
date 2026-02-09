@@ -107,7 +107,7 @@ def prepare_server_display(
     if host and port:
         console.print(Text("🚀 Bindu Server 🚀", style="bold magenta"), highlight=False)
         console.print(
-            Text(f"Agent Server: http://{host}:{port}", style="green"), highlight=False
+            Text(f"Local Server: http://{host}:{port}", style="green"), highlight=False
         )
         console.print()
 
