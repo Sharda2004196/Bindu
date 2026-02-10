@@ -26,6 +26,14 @@ export type Message = Partial<Timestamps> & {
 		provider?: InferenceProvider;
 	};
 
+	// Agent task metadata (for bindu agent)
+	taskMetadata?: {
+		taskId: string;
+		contextId: string;
+		status: string;
+		referenceTaskIds?: string[]; // Tasks this task references/continues from
+	};
+
 	// needed for conversation trees
 	ancestors?: Message["id"][];
 

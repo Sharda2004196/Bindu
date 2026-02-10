@@ -22,6 +22,7 @@
 	import { isMessageToolUpdate } from "$lib/utils/messageUpdates";
 	import { MessageUpdateType, type MessageToolUpdate } from "$lib/types/MessageUpdate";
 	import ImageLightbox from "./ImageLightbox.svelte";
+	import TaskInfo from "./TaskInfo.svelte";
 
 	interface Props {
 		message: Message;
@@ -34,6 +35,7 @@
 		isLast?: boolean;
 		onretry?: (payload: { id: Message["id"]; content?: string }) => void;
 		onshowAlternateMsg?: (payload: { id: Message["id"] }) => void;
+		onReplyToTask?: (taskId: string) => void;
 	}
 
 	let {
@@ -47,6 +49,7 @@
 		isLast = false,
 		onretry,
 		onshowAlternateMsg,
+		onReplyToTask,
 	}: Props = $props();
 
 	let contentEl: HTMLElement | undefined = $state();
@@ -322,7 +325,7 @@
 			</div>
 		</div>
 
-		{#if message.routerMetadata || (!loading && message.content)}
+		{#if message.routerMetadata || message.taskMetadata || (!loading && message.content)}
 			<div
 				class="absolute -bottom-3.5 {message.routerMetadata && messageInfoWidth > messageWidth
 					? 'left-1 pl-1 lg:pl-7'
@@ -373,6 +376,7 @@
 					</div>
 				{/if}
 				{#if !isLast || !loading}
+					<TaskInfo {message} onReply={onReplyToTask} />
 					<CopyToClipBoardBtn
 						onClick={() => {
 							isCopied = true;

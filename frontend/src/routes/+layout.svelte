@@ -25,6 +25,8 @@
 	import { shareModal } from "$lib/stores/shareModal";
 	import BackgroundGenerationPoller from "$lib/components/BackgroundGenerationPoller.svelte";
 	import { requireAuthUser } from "$lib/utils/auth";
+	import { agentAPI } from "$lib/services/agent-api";
+	import { browser } from "$app/environment";
 
 	let { data = $bindable(), children } = $props();
 
@@ -34,9 +36,98 @@
 	const client = useAPIClient();
 
 	let conversations = $state(data.conversations);
+	let agentContextsLoaded = $state(false);
+	
 	$effect(() => {
 		data.conversations && untrack(() => (conversations = data.conversations));
 	});
+	
+	// Load agent contexts client-side
+	$effect(() => {
+		if (browser && !agentContextsLoaded) {
+			loadAgentContexts();
+		}
+	});
+	
+	async function loadAgentContexts() {
+		try {
+			console.log('Loading agent contexts...');
+			const token = localStorage.getItem('bindu_oauth_token');
+			if (!token) {
+				console.log('No OAuth token found, skipping agent contexts');
+				return;
+			}
+			
+			console.log('Token found, fetching contexts...');
+			agentAPI.setAuthToken(token);
+			const contexts = await agentAPI.listContexts(50);
+			console.log('Contexts received:', contexts);
+			console.log('Number of contexts:', contexts.length);
+			
+			const agentConvs = [];
+			for (let i = 0; i < contexts.length; i++) {
+				const ctx = contexts[i];
+				console.log(`Processing context ${i + 1}/${contexts.length}:`, ctx);
+				let title = 'New Chat';
+				let timestamp = new Date();
+				
+				if (ctx.task_ids && ctx.task_ids.length > 0) {
+					console.log(`  Context has ${ctx.task_ids.length} tasks, fetching first task:`, ctx.task_ids[0]);
+					try {
+						const task = await agentAPI.getTask(ctx.task_ids[0]);
+						console.log('  Task received:', task);
+						const history = task.history || [];
+						console.log('  Task history length:', history.length);
+						
+						for (const msg of history) {
+							if (msg.role === 'user') {
+								const parts = msg.parts || [];
+								const textParts = parts
+									.filter(part => part.kind === 'text')
+									.map(part => part.text || '');
+								if (textParts.length > 0) {
+									title = textParts[0].substring(0, 50);
+									if (textParts[0].length > 50) title += '...';
+									console.log('  ✅ Found title:', title);
+									break;
+								}
+							}
+						}
+						
+						if (task.status && task.status.timestamp) {
+							timestamp = new Date(task.status.timestamp);
+						}
+					} catch (err) {
+						console.error('  ❌ Error loading context preview:', err);
+					}
+				} else {
+					console.log('  No tasks in this context');
+				}
+				
+				console.log(`  Final title for context: "${title}"`);
+				
+				if (ctx.context_id) {
+					agentConvs.push({
+						id: ctx.context_id,
+						title,
+						model: 'bindu',
+						updatedAt: timestamp,
+					});
+				}
+			}
+			
+			console.log('Agent conversations to add:', agentConvs);
+			
+			// Merge and sort
+			conversations = [...data.conversations, ...agentConvs].sort(
+				(a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
+			);
+			console.log('Final merged conversations:', conversations);
+			agentContextsLoaded = true;
+		} catch (err) {
+			console.error('Error loading agent contexts:', err);
+		}
+	}
 
 	let isNavCollapsed = $state(false);
 

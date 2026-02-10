@@ -26,6 +26,7 @@
 	import { error } from "$lib/stores/errors";
 	import { shareModal } from "$lib/stores/shareModal";
 	import LucideHammer from "~icons/lucide/hammer";
+	import ReplyIndicator from "./ReplyIndicator.svelte";
 
 	import { fly } from "svelte/transition";
 	import { cubicInOut } from "svelte/easing";
@@ -54,6 +55,9 @@
 		onstop?: () => void;
 		onretry?: (payload: { id: Message["id"]; content?: string }) => void;
 		onshowAlternateMsg?: (payload: { id: Message["id"] }) => void;
+		onReplyToTask?: (taskId: string) => void;
+		replyToTaskId?: string | null;
+		onClearReply?: () => void;
 		draft?: string;
 	}
 
@@ -72,6 +76,9 @@
 		onstop,
 		onretry,
 		onshowAlternateMsg,
+		onReplyToTask,
+		replyToTaskId = null,
+		onClearReply,
 	}: Props = $props();
 
 	let isReadOnly = $derived(!models.some((model) => model.id === currentModel.id));
@@ -348,7 +355,7 @@
 	}}
 />
 
-<div class="relative z-[-1] min-h-0 min-w-0">
+<div class="relative min-h-0 min-w-0">
 	{#if shareModalOpen}
 		<ShareConversationModal open={shareModalOpen} onclose={() => shareModal.close()} />
 	{/if}
@@ -357,6 +364,9 @@
 		use:snapScrollToBottom={scrollDependency}
 		bind:this={chatContainer}
 	>
+		{#if replyToTaskId}
+			<ReplyIndicator taskId={replyToTaskId} onClear={onClearReply ?? (() => {})} />
+		{/if}
 		<div
 			class="mx-auto flex h-full max-w-3xl flex-col gap-6 px-5 pt-6 sm:gap-8 xl:max-w-4xl xl:pt-10"
 		>
@@ -377,6 +387,7 @@
 							bind:editMsdgId
 							onretry={(payload) => onretry?.(payload)}
 							onshowAlternateMsg={(payload) => onshowAlternateMsg?.(payload)}
+							onReplyToTask={onReplyToTask}
 						/>
 					{/each}
 									</div>

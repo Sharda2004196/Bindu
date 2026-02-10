@@ -9,7 +9,8 @@ export type MessageUpdate =
 	| MessageFileUpdate
 	| MessageFinalAnswerUpdate
 	| MessageReasoningUpdate
-	| MessageRouterMetadataUpdate;
+	| MessageRouterMetadataUpdate
+	| MessageTaskMetadataUpdate;
 
 export enum MessageUpdateType {
 	Status = "status",
@@ -20,6 +21,7 @@ export enum MessageUpdateType {
 	FinalAnswer = "finalAnswer",
 	Reasoning = "reasoning",
 	RouterMetadata = "routerMetadata",
+	TaskMetadata = "taskMetadata",
 }
 
 // Status
@@ -128,4 +130,11 @@ export interface MessageRouterMetadataUpdate {
 	route: string;
 	model: string;
 	provider?: InferenceProvider;
+}
+export interface MessageTaskMetadataUpdate {
+	type: MessageUpdateType.TaskMetadata;
+	taskId: string;
+	contextId: string;
+	status: string;
+	referenceTaskIds?: string[];
 }
