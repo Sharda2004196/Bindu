@@ -193,7 +193,11 @@ config = {
     "author": "imdanishakhtar7@gmail.com",
     "name": "cerina_supervisor_cbt",
     "description": "Supervisor orchestrator for Cerina CBT integration with LangGraph workflow.",
-    "deployment": {"url": "http://localhost:3773", "expose": True},
+    "deployment": {
+        "url": "http://localhost:3773",
+        "expose": True,
+        "cors_origins": ["http://localhost:5173"]
+    },
     "skills": ["../../skills/cbt-supervisor-orchestrator"],
 }
 

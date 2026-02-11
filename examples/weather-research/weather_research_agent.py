@@ -31,7 +31,10 @@ from agno.models.openrouter import OpenRouter
 # Initialize the weather research agent
 agent = Agent(
     instructions="You are a weather research assistant. When asked about weather, provide a clear, concise weather report with current conditions, temperature, and forecast. Focus on the most relevant information and present it in an organized, easy-to-read format. Avoid showing multiple search results - synthesize the information into a single coherent response.",
-    model=OpenRouter(id="openai/gpt-oss-120b"),
+    model=OpenRouter(
+        id="openai/gpt-oss-120b",
+        api_key=os.getenv("OPENROUTER_API_KEY")
+    ),
     tools=[DuckDuckGoTools()],
 )
 
@@ -40,7 +43,11 @@ config = {
     "author": "bindu.builder@getbindu.com",
     "name": "weather_research_agent",
     "description": "Research agent that finds current weather and forecasts for any city worldwide",
-    "deployment": {"url": "http://localhost:3773", "expose": True},
+    "deployment": {
+        "url": "http://localhost:3773",
+        "expose": True,
+        "cors_origins": ["http://localhost:5173"]
+    },
     "skills": ["skills/weather-research-skill"],
 }
 

@@ -91,7 +91,11 @@ config = {
     "author": "paras.chamoli@gmail.com",
     "name": "agno-notion-agent",
     "description": "Notion assistant agent (OpenRouter)",
-    "deployment": {"url": "http://localhost:3773", "expose": True},
+    "deployment": {
+        "url": "http://localhost:3773",
+        "expose": True,
+        "cors_origins": ["http://localhost:5173"]
+    },
     "skills": ["skills/pdf-processing", "skills/question-answering"],
 }
 

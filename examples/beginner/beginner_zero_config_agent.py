@@ -16,6 +16,7 @@ Environment:
     Requires OPENROUTER_API_KEY in .env file
 """
 
+import os
 from bindu.penguin.bindufy import bindufy
 from agno.agent import Agent
 from agno.models.openrouter import OpenRouter
@@ -26,7 +27,10 @@ load_dotenv()  # Load environment variables from .env file
 
 agent = Agent(
     instructions="You are a friendly assistant that explains things simply.",
-    model=OpenRouter(id="openai/gpt-oss-120b"),
+    model=OpenRouter(
+        id="openai/gpt-oss-120b",
+        api_key=os.getenv("OPENROUTER_API_KEY")
+    ),
     tools=[DuckDuckGoTools()],
 )
 
@@ -35,8 +39,9 @@ config = {
     "name": "beginner_zero_config_agent",
     "description": "Zero-config local Bindu agent for first-time users",
     "deployment": {
-        "url": "http://localhost:3774",
+        "url": "http://localhost:3773",
         "expose": True,
+        "cors_origins": ["http://localhost:5173"]
     },
     "skills": ["skills/question-answering", "skills/pdf-processing"],
 }

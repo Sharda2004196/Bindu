@@ -61,7 +61,11 @@ config = {
     "author": "your.email@example.com",
     "name": "bindu_docs_agent",
     "description": "Answers questions about Bindu documentation",
-    "deployment": {"url": "http://localhost:3773", "expose": True},
+    "deployment": {
+        "url": "http://localhost:3773",
+        "expose": True,
+        "cors_origins": ["http://localhost:5173"]
+    },
     "skills": ["skills/question-answering", "skills/pdf-processing"],
 }
 

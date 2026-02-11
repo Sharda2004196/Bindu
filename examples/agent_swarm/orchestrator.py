@@ -1,8 +1,8 @@
-from examples.agent_swarm.researcher_agent import build_research_agent
-from examples.agent_swarm.summarizer_agent import build_summarizer_agent
-from examples.agent_swarm.critic_agent import build_critic_agent
-from examples.agent_swarm.planner_agent import build_planner_agent
-from examples.agent_swarm.reflection_agent import build_reflection_agent
+from researcher_agent import build_research_agent
+from summarizer_agent import build_summarizer_agent
+from critic_agent import build_critic_agent
+from planner_agent import build_planner_agent
+from reflection_agent import build_reflection_agent
 
 import json
 import re

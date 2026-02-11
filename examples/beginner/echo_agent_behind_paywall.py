@@ -36,7 +36,11 @@ config = {
     "author": "gaurikasethi88@gmail.com",
     "name": "echo_agent",
     "description": "A basic echo agent for quick testing.",
-    "deployment": {"url": "http://localhost:3773", "expose": True},
+    "deployment": {
+        "url": "http://localhost:3773",
+        "expose": True,
+        "cors_origins": ["http://localhost:5173"]
+    },
     "skills": ["skills/question-answering", "skills/pdf-processing"],
     "execution_cost": {
     "amount": "$0.0001",

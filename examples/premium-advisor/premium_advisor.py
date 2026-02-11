@@ -50,7 +50,10 @@ agent = Agent(
     Focus on premium, high-value insights that justify the cost. Be direct,
     confident, and provide specific, actionable advice.""",
 
-    model=OpenRouter(id="openai/gpt-oss-120b"),
+    model=OpenRouter(
+        id="openai/gpt-oss-120b",
+        api_key=os.getenv("OPENROUTER_API_KEY")
+    ),
 )
 
 
@@ -89,7 +92,11 @@ config = {
     "author": "premium.advisor@example.com",
     "name": "Oracle_of_Value",
     "description": "I provide high-value market insights and investment recommendations. Payment required upfront.",
-    "deployment": {"url": "http://localhost:3773", "expose": True},
+    "deployment": {
+        "url": "http://localhost:3773",
+        "expose": True,
+        "cors_origins": ["http://localhost:5173"]
+    },
      "execution_cost": {
         "amount": "0.01",  # Cost of one interaction
         "token": "USDC",  # Currency

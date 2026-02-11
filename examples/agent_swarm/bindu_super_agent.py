@@ -1,5 +1,5 @@
 from bindu.penguin.bindufy import bindufy
-from examples.agent_swarm.orchestrator import Orchestrator
+from orchestrator import Orchestrator
 from typing import List, Dict, Any
 from dotenv import load_dotenv
 load_dotenv()
@@ -51,9 +51,9 @@ if __name__ == "__main__":
         "description": "Multi-agent AI system for deep research, summarization, critique and reflection.",
         "capabilities": {"streaming": True},
         "deployment": {
-            "url": "http://localhost:3780",
+            "url": "http://localhost:3773",
             "expose": True,
-            "protocol_version": "1.0.0"
+            "cors_origins": ["http://localhost:5173"]
         },
         "skills": ["skills/agent-swarm-intelligence"],
         "storage": {"type": "memory"},
