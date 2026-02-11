@@ -4,6 +4,67 @@ Bindu uses Redis as its distributed task scheduler for coordinating work across 
 
 **Scheduler is optional** - InMemoryScheduler is used by default for single-process deployments.
 
+## Architecture
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant TaskManager
+    participant Scheduler
+    participant Queue
+    participant Worker
+    participant Storage
+
+    Note over TaskManager: Startup
+    TaskManager->>Scheduler: Initialize (Redis/Memory)
+    TaskManager->>Worker: Start ManifestWorker
+    Worker->>Scheduler: Listen for tasks
+
+    Note over Client,Storage: Task Execution Flow
+
+    rect rgb(240, 248, 255)
+        Note over Client,Scheduler: 1. Task Submission
+        Client->>TaskManager: POST / (message/send)
+        TaskManager->>Storage: Save task (state: pending)
+        TaskManager->>Scheduler: run_task(params)
+        
+        alt Redis Scheduler
+            Scheduler->>Queue: RPUSH bindu:tasks
+            Note over Queue: Task queued in Redis
+        else Memory Scheduler
+            Scheduler->>Queue: Send to memory stream
+            Note over Queue: Task in memory queue
+        end
+    end
+
+    rect rgb(255, 248, 240)
+        Note over Worker,Storage: 2. Task Processing
+        
+        alt Redis Scheduler
+            Worker->>Queue: BLPOP bindu:tasks (blocking)
+            Queue-->>Worker: Task operation
+        else Memory Scheduler
+            Worker->>Queue: Receive from stream
+            Queue-->>Worker: Task operation
+        end
+        
+        Worker->>Storage: Update state: working
+        Worker->>Worker: Execute agent handler
+        Worker->>Storage: Update state: completed/failed
+    end
+
+    rect rgb(240, 255, 240)
+        Note over Client,Storage: 3. Task Monitoring
+        Client->>TaskManager: GET /tasks/{task_id}
+        TaskManager->>Storage: Load task
+        Storage-->>TaskManager: Task data
+        TaskManager-->>Client: {state, result}
+    end
+
+    Note over TaskManager,Worker: Operations Supported
+    Note over Scheduler: - run_task<br/>- cancel_task<br/>- pause_task<br/>- resume_task
+```
+
 ## Configuration
 
 ### Environment Variables

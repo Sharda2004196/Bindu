@@ -2,6 +2,45 @@
 
 Bindu supports the **X402 payment protocol**, enabling you to monetize your AI agents by requiring cryptocurrency payments before executing specific methods. This allows you to build paid AI services with native blockchain payment integration.
 
+## How It Works
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Agent
+    participant Blockchain
+    participant Wallet
+
+    Note over User,Agent: 1. Start Payment Session
+    User->>Agent: POST /api/start-payment-session
+    Agent->>Agent: Create session (15 min expiry)
+    Agent-->>User: {session_id, browser_url}
+
+    Note over User,Wallet: 2. Complete Payment in Browser
+    User->>Agent: Open browser_url
+    Agent-->>User: Show paywall UI
+    User->>Wallet: Connect wallet (MetaMask/Coinbase)
+    Wallet-->>User: Wallet connected
+    User->>Wallet: Approve transaction
+    Wallet->>Blockchain: Submit USDC transfer
+    Blockchain-->>Wallet: Transaction confirmed
+    Wallet->>Agent: Send X-PAYMENT header<br/>(signed transaction)
+    Agent->>Agent: Store payment in session
+
+    Note over User,Agent: 3. Verify Payment
+    User->>Agent: GET /api/payment-status/{session_id}
+    Agent->>Agent: Check session status
+    Agent-->>User: {status: completed, payment_token}
+
+    Note over User,Agent: 4. Use Protected Method
+    User->>Agent: POST / (JSON-RPC)<br/>X-Payment-Token: {token}
+    Agent->>Agent: Validate payment token
+    Agent->>Blockchain: Verify transaction on-chain<br/>(balance, signature)
+    Blockchain-->>Agent: Valid
+    Agent->>Agent: Execute protected method
+    Agent-->>User: Response
+```
+
 ## Configuration
 
 Add the `execution_cost` configuration to your agent config to enable payment gating:

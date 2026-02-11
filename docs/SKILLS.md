@@ -2,6 +2,63 @@
 
 Skills are reusable capabilities that agents can advertise and execute. They enable intelligent task routing, capability discovery, and agent orchestration.
 
+## How Skills Work
+
+```mermaid
+sequenceDiagram
+    participant Developer
+    participant SkillYAML
+    participant SkillLoader
+    participant AgentManifest
+    participant AgentCard
+    participant Orchestrator
+    participant Negotiation
+
+    Note over Developer,SkillYAML: 1. Skill Creation
+    Developer->>SkillYAML: Create skill.yaml<br/>(metadata, capabilities, tags)
+    SkillYAML->>SkillYAML: Define:<br/>- name, description<br/>- capabilities, tags<br/>- input/output formats<br/>- assessment metadata
+
+    Note over Developer,AgentManifest: 2. Agent Startup (bindufy)
+    Developer->>SkillLoader: config = {skills: ["skills/my-skill"]}
+    SkillLoader->>SkillYAML: Load skill.yaml
+    SkillYAML-->>SkillLoader: Skill metadata
+    SkillLoader->>SkillLoader: Parse YAML<br/>Extract capabilities<br/>Load documentation
+    SkillLoader-->>AgentManifest: List[Skill]
+    AgentManifest->>AgentManifest: Build manifest with skills
+
+    Note over AgentCard,Orchestrator: 3. Skill Advertisement
+    Orchestrator->>AgentCard: GET /.well-known/agent.json
+    AgentCard-->>Orchestrator: {<br/>  name, description,<br/>  skills: [{<br/>    id, name, tags,<br/>    capabilities_detail,<br/>    input_modes, output_modes<br/>  }]<br/>}
+
+    rect rgb(240, 248, 255)
+        Note over Orchestrator: 4. Skill Discovery
+        Orchestrator->>Orchestrator: Parse agent cards<br/>Index skills by:<br/>- tags<br/>- capabilities<br/>- keywords
+        Orchestrator->>Orchestrator: Build skill registry
+    end
+
+    rect rgb(255, 248, 240)
+        Note over Orchestrator,Negotiation: 5. Task Routing (Negotiation)
+        Orchestrator->>Orchestrator: Task: "Extract tables from PDF"
+        Orchestrator->>Negotiation: POST /agent/negotiation<br/>{task_summary}
+        
+        Negotiation->>Negotiation: Match against skills:<br/>- Keywords: pdf, extract, tables<br/>- Tags: pdf, document<br/>- Capabilities: table_extraction<br/>- Assessment metadata
+        
+        Negotiation->>Negotiation: Calculate scores:<br/>- Skill match: 0.92<br/>- Specialization boost: +0.3<br/>- Anti-pattern check: pass
+        
+        Negotiation-->>Orchestrator: {<br/>  accepted: true,<br/>  score: 0.89,<br/>  skill_matches: [{<br/>    skill_id: "pdf-processing-v1",<br/>    score: 0.92<br/>  }]<br/>}
+    end
+
+    rect rgb(240, 255, 240)
+        Note over Orchestrator,AgentManifest: 6. Task Execution
+        Orchestrator->>AgentManifest: POST / (message/send)<br/>{content: "Extract tables..."}
+        AgentManifest->>AgentManifest: Route to handler<br/>Execute skill logic
+        AgentManifest-->>Orchestrator: {result: tables_data}
+    end
+
+    Note over SkillLoader,Negotiation: Key Components
+    Note over SkillLoader: - YAML parsing<br/>- Documentation loading<br/>- Capability extraction
+    Note over Negotiation: - Semantic matching<br/>- Keyword scoring<br/>- Specialization boost<br/>- Anti-pattern filtering
+```
 
 ## Skill Structure
 

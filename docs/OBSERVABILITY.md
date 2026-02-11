@@ -9,7 +9,7 @@ sequenceDiagram
     participant Agent
     participant OTEL
     participant Sentry
-    participant Platform
+    participant ObservabilityPlatform (Langfuse/Arize)
 
     Note over Agent: Agent Startup (bindufy)
     
@@ -33,11 +33,11 @@ sequenceDiagram
     Note over Agent: Agent Running
 
     rect rgb(240, 255, 240)
-        Note over Agent,Platform: Runtime Telemetry
+        Note over Agent,ObservabilityPlatform: Runtime Telemetry
         Agent->>OTEL: Create spans (traces)
-        OTEL->>Platform: Export to Langfuse/Arize<br/>(batched, async)
+        OTEL->>ObservabilityPlatform: Export to Langfuse/Arize<br/>(batched, async)
         Agent->>Sentry: Capture errors/performance
-        Sentry->>Platform: Send to Sentry.io
+        Sentry->>ObservabilityPlatform: Send to Sentry.io
     end
 ```
 

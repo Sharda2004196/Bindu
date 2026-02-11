@@ -4,6 +4,79 @@ Bindu uses PostgreSQL as its persistent storage backend for production deploymen
 
 **Storage is optional** - InMemoryStorage is used by default for development and testing.
 
+## Architecture
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant TaskManager
+    participant Storage
+    participant PostgreSQL
+    participant Alembic
+
+    Note over Storage,Alembic: Startup & Initialization
+    
+    rect rgb(240, 248, 255)
+        Note over Storage,PostgreSQL: 1. Connection Setup
+        Storage->>PostgreSQL: Create async engine<br/>(connection pool)
+        Storage->>PostgreSQL: Test connection (ping)
+        PostgreSQL-->>Storage: Connected
+        
+        alt Auto-migrations enabled
+            Storage->>Alembic: Run pending migrations
+            Alembic->>PostgreSQL: CREATE/ALTER tables
+            PostgreSQL-->>Alembic: Schema updated
+        end
+    end
+
+    Note over Client,PostgreSQL: Task Lifecycle Operations
+
+    rect rgb(255, 248, 240)
+        Note over Client,Storage: 2. Submit Task
+        Client->>TaskManager: POST / (message/send)
+        TaskManager->>Storage: submit_task(context_id, message)
+        Storage->>PostgreSQL: INSERT INTO tasks<br/>(id, context_id, state, history)
+        Storage->>PostgreSQL: INSERT INTO contexts<br/>(id, message_history)
+        PostgreSQL-->>Storage: Task created
+        Storage-->>TaskManager: Task (state: submitted)
+    end
+
+    rect rgb(240, 255, 240)
+        Note over TaskManager,PostgreSQL: 3. Update Task
+        TaskManager->>Storage: update_task(task_id, state,<br/>new_messages, new_artifacts)
+        Storage->>PostgreSQL: BEGIN TRANSACTION
+        Storage->>PostgreSQL: SELECT * FROM tasks<br/>WHERE id = task_id
+        PostgreSQL-->>Storage: Task row
+        Storage->>PostgreSQL: UPDATE tasks SET<br/>state = 'working',<br/>history = history || new_messages,<br/>artifacts = artifacts || new_artifacts
+        Storage->>PostgreSQL: COMMIT
+        PostgreSQL-->>Storage: Updated task
+        Storage-->>TaskManager: Task (state: working)
+    end
+
+    rect rgb(255, 240, 240)
+        Note over Client,PostgreSQL: 4. Load Task
+        Client->>TaskManager: GET /tasks/{task_id}
+        TaskManager->>Storage: load_task(task_id)
+        Storage->>PostgreSQL: SELECT * FROM tasks<br/>WHERE id = task_id
+        PostgreSQL-->>Storage: Task row
+        Storage->>Storage: Convert row to Task TypedDict
+        Storage-->>TaskManager: Task object
+        TaskManager-->>Client: {id, state, history, artifacts}
+    end
+
+    rect rgb(248, 240, 255)
+        Note over Client,PostgreSQL: 5. List Tasks
+        Client->>TaskManager: GET /tasks
+        TaskManager->>Storage: list_tasks(length)
+        Storage->>PostgreSQL: SELECT * FROM tasks<br/>ORDER BY created_at DESC<br/>LIMIT length
+        PostgreSQL-->>Storage: Task rows
+        Storage-->>TaskManager: List[Task]
+        TaskManager-->>Client: [{task1}, {task2}, ...]
+    end
+
+    Note over Storage,PostgreSQL: Key Features
+    Note over Storage: - JSONB for history/artifacts<br/>- Connection pooling<br/>- Automatic retries<br/>- Transaction support<br/>- GIN indexes for JSONB
+```
 
 ## Storage Structure
 
